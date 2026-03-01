@@ -1,4 +1,5 @@
 import { fetchWeatherData, fetchWeatherByCoords, WMO_CODES } from './src/js/weather.js';
+import { el } from './src/js/ui.js';
 
 const searchInput = document.querySelector('#search');
 const searchButton = document.querySelector('#search-btn');
@@ -10,12 +11,8 @@ function getUnits() {
     return unitsToggle.checked ? 'metric' : 'imperial';
 }
 
-// Safe DOM element factory — never uses innerHTML for untrusted content
-function el(tag, className, text) {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    if (text !== undefined) node.textContent = text;
-    return node;
+function getUnitSymbol() {
+    return unitsToggle.checked ? 'C' : 'F';
 }
 
 function wmoDescription(code) {
@@ -25,7 +22,7 @@ function wmoDescription(code) {
 function displayWeather(data, cityName) {
     weatherDisplay.innerHTML = '';
     const { current } = data;
-    const unit = unitsToggle.checked ? 'C' : 'F';
+    const unit = getUnitSymbol();
 
     weatherDisplay.append(
         el('h2', null, cityName ?? 'Current Location'),
@@ -40,7 +37,7 @@ function displayWeather(data, cityName) {
 function displayForecast(data) {
     forecastCards.innerHTML = '';
     const { daily } = data;
-    const unit = unitsToggle.checked ? 'C' : 'F';
+    const unit = getUnitSymbol();
 
     daily.time.forEach((date, i) => {
         const card = el('div', 'weather-card');
@@ -67,9 +64,9 @@ async function search(location) {
     }
     const units = getUnits();
     try {
-        const data = await fetchWeatherData(trimmed, units);
-        displayWeather(data, data._cityName);
-        displayForecast(data);
+        const { weather, cityName } = await fetchWeatherData(trimmed, units);
+        displayWeather(weather, cityName);
+        displayForecast(weather);
     } catch (err) {
         const safe = err.message.startsWith('City not found')
             ? err.message

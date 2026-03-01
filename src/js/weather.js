@@ -44,10 +44,8 @@ async function fetchWeatherByCoords(lat, lon, units = 'metric') {
 
 async function fetchWeatherData(city, units = 'metric') {
     const geo = await geocodeCity(city);
-    const data = await fetchWeatherByCoords(geo.latitude, geo.longitude, units);
-    data._cityName = geo.name;
-    data._country = geo.country;
-    return data;
+    const weather = await fetchWeatherByCoords(geo.latitude, geo.longitude, units);
+    return { weather, cityName: geo.name, country: geo.country };
 }
 
 export { fetchWeatherData, fetchWeatherByCoords, WMO_CODES };

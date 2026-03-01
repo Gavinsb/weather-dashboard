@@ -1,0 +1,20 @@
+:root {
+  --weather-sunny-bg: #FFD700;
+  --weather-sunny-color: #000;
+  --weather-cloudy-bg: #B0C4DE;
+  --weather-cloudy-color: #333;
+  --weather-rainy-bg: #4682B4;
+  --weather-rainy-color: #fff;
+  --weather-snowy-bg: #FFFFFF;
+  --weather-snowy-color: #000;
+  --weather-night-bg: #000033;
+  --weather-night-color: #fff;
+
+  /* Time of day themes */
+  --morning-bg: #FFFAF0;
+  --morning-color: #5B3E1A;
+  --afternoon-bg: #F0E68C;
+  --afternoon-color: #4B3C2A;
+  --evening-bg: #FF8C00;
+  --evening-color: #fff;
+}

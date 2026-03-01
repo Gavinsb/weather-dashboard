@@ -1,0 +1,45 @@
+.weather-card {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.weather-card__item {
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s;
+}
+
+.weather-card__item:hover {
+    transform: scale(1.05);
+}
+
+.sunny {
+    background-color: #ffeb3b;
+}
+
+.rainy {
+    background-color: #2196f3;
+}
+
+.cloudy {
+    background-color: #9e9e9e;
+}
+
+.weather-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2rem;
+}
+
+.temperature {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.description {
+    font-size: 1.2rem;
+}

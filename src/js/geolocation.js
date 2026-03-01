@@ -1,41 +1,27 @@
-// geolocation.js
+// geolocation.js — Browser geolocation helper
 
 /**
- * Get user location.  
- * 1. Ask for location permissions.  
- * 2. If granted, get current position.
- * 3. If denied, handle the response.  
+ * Get the user's current position and pass coordinates to a callback.
+ * @param {function(lat: number, lon: number): void} onSuccess
+ * @param {function(string): void} [onError]
  */
-function getUserLocation() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            function(position) {
-                const lat = position.coords.latitude;
-                const lon = position.coords.longitude;
-                console.log(`Latitude: ${lat}, Longitude: ${lon}`);
-                // Additional functionality can be added here (e.g., fetch weather data)
-            },
-            function(error) {
-                switch(error.code) {
-                    case error.PERMISSION_DENIED:
-                        console.error('User denied the request for Geolocation.');
-                        break;
-                    case error.POSITION_UNAVAILABLE:
-                        console.error('Location information is unavailable.');
-                        break;
-                    case error.TIMEOUT:
-                        console.error('The request to get user location timed out.');
-                        break;
-                    case error.UNKNOWN_ERROR:
-                        console.error('An unknown error occurred.');
-                        break;
-                }
-            }
-        );
-    } else {
-        console.error('Geolocation is not supported by this browser.');
+function getUserLocation(onSuccess, onError) {
+    if (!navigator.geolocation) {
+        onError?.('Geolocation is not supported by this browser.');
+        return;
     }
+
+    navigator.geolocation.getCurrentPosition(
+        position => onSuccess(position.coords.latitude, position.coords.longitude),
+        error => {
+            const messages = {
+                [error.PERMISSION_DENIED]: 'User denied the request for Geolocation.',
+                [error.POSITION_UNAVAILABLE]: 'Location information is unavailable.',
+                [error.TIMEOUT]: 'The request to get user location timed out.',
+            };
+            onError?.(messages[error.code] ?? 'An unknown error occurred.');
+        }
+    );
 }
 
-// Call the function to get user location
-getUserLocation();
+export { getUserLocation };

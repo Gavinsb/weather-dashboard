@@ -1,65 +1,89 @@
-// JavaScript for Weather Dashboard
+import { fetchCurrentWeather, fetchWeatherForecast, fetchWeatherByCoords } from './src/js/weather.js';
 
-// API key and base URL
-const API_KEY = 'your_api_key_here';
-const BASE_URL = 'https://api.openweathermap.org/data/2.5/';
-
-// DOM elements
-const searchInput = document.querySelector('#search-input');
-const searchButton = document.querySelector('#search-button');
+const searchInput = document.querySelector('#search');
+const searchButton = document.querySelector('#search-btn');
 const weatherDisplay = document.querySelector('#weather-display');
+const forecastCards = document.querySelector('#forecast-cards');
 const unitsToggle = document.querySelector('#units-toggle');
 
-// Function to fetch weather data
-async function fetchWeatherData(location, units) {
-    const response = await fetch(`${BASE_URL}weather?q=${location}&units=${units}&appid=${API_KEY}`);
-    return response.json();
+function getUnits() {
+    return unitsToggle.checked ? 'metric' : 'imperial';
 }
 
-// Function to display weather data
 function displayWeather(data) {
     if (data.cod !== 200) {
-        alert('Error: ' + data.message);
+        weatherDisplay.innerHTML = `<p class="error">Error: ${data.message}</p>`;
         return;
     }
     const { name, main, weather, wind } = data;
-    weatherDisplay.innerHTML = `<h2>${name}</h2>\n` +
-                              `<p>Temperature: ${main.temp}°${unitsToggle.checked ? 'C' : 'F'}</p>\n` +
-                              `<p>Condition: ${weather[0].description}</p>\n` +
-                              `<p>Wind Speed: ${wind.speed} m/s</p>`;
+    const unit = unitsToggle.checked ? 'C' : 'F';
+    weatherDisplay.innerHTML = `
+        <h2>${name}</h2>
+        <p>Temperature: ${main.temp}°${unit}</p>
+        <p>Feels like: ${main.feels_like}°${unit}</p>
+        <p>Condition: ${weather[0].description}</p>
+        <p>Humidity: ${main.humidity}%</p>
+        <p>Wind Speed: ${wind.speed} m/s</p>
+    `;
 }
 
-// Event listeners
-searchButton.addEventListener('click', async () => {
-    const location = searchInput.value;
-    const units = unitsToggle.checked ? 'metric' : 'imperial';
-    const weatherData = await fetchWeatherData(location, units);
-    displayWeather(weatherData);
-});
-
-// Geolocation feature
-if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(async position => {
-        const { latitude, longitude } = position.coords;
-        const response = await fetch(`${BASE_URL}weather?lat=${latitude}&lon=${longitude}&appid=${API_KEY}`);
-        const data = await response.json();
-        displayWeather(data);
+function displayForecast(data) {
+    if (data.cod !== '200') return;
+    forecastCards.innerHTML = '';
+    // Show one reading per day (every 8th entry ≈ 24 h intervals)
+    data.list.filter((_, i) => i % 8 === 0).forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'weather-card';
+        const unit = unitsToggle.checked ? 'C' : 'F';
+        card.innerHTML = `
+            <h3>${new Date(item.dt * 1000).toLocaleDateString()}</h3>
+            <p>${item.main.temp}°${unit}</p>
+            <p>${item.weather[0].description}</p>
+        `;
+        forecastCards.appendChild(card);
     });
 }
 
-// Autocomplete feature for search input
-const autocompleteList = ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Miami']; // Example locations
-searchInput.addEventListener('input', () => {
-    const value = searchInput.value;
-    const suggestions = autocompleteList.filter(location => location.toLowerCase().startsWith(value.toLowerCase()));
-    // Show suggestions
+async function search(location) {
+    if (!location.trim()) return;
+    const units = getUnits();
+    try {
+        const [current, forecast] = await Promise.all([
+            fetchCurrentWeather(location, units),
+            fetchWeatherForecast(location, units),
+        ]);
+        displayWeather(current);
+        displayForecast(forecast);
+    } catch {
+        weatherDisplay.innerHTML = `<p class="error">Failed to fetch weather data. Please try again.</p>`;
+    }
+}
+
+searchButton.addEventListener('click', () => search(searchInput.value));
+
+searchInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') search(searchInput.value);
 });
 
-// Unit toggle functionality
 unitsToggle.addEventListener('change', () => {
-    const currentLocation = searchInput.value;
-    if (currentLocation) {
-        const units = unitsToggle.checked ? 'metric' : 'imperial';
-        fetchWeatherData(currentLocation, units).then(displayWeather);
-    }
+    const location = searchInput.value;
+    if (location) search(location);
 });
+
+if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+        async position => {
+            const { latitude, longitude } = position.coords;
+            try {
+                const data = await fetchWeatherByCoords(latitude, longitude, getUnits());
+                displayWeather(data);
+                searchInput.value = data.name;
+                const forecast = await fetchWeatherForecast(data.name, getUnits());
+                displayForecast(forecast);
+            } catch {
+                // Silent fallback — user can search manually
+            }
+        },
+        () => {} // User denied geolocation or it is unavailable
+    );
+}

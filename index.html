@@ -1,1 +1,49 @@
-<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>Weather Dashboard</title>\n    <link rel="stylesheet" href="styles.css">\n</head>\n<body>\n    <header>\n        <h1>Weather Dashboard</h1>\n        <nav>\n            <input type="text" id="search" placeholder="Search for a city...">\n            <button id="search-btn">Search</button>\n        </nav>\n    </header>\n    <main>\n        <section id="current-weather">\n            <h2>Current Weather</h2>\n            <div id="weather-display">\n                <!-- Weather data will be displayed here -->\n            </div>\n        </section>\n        <section id="forecast">\n            <h2>5-Day Forecast</h2>\n            <div id="forecast-cards">\n                <!-- Forecast cards will be generated here -->\n            </div>\n        </section>\n        <section id="alerts">\n            <h2>Weather Alerts</h2>\n            <div id="alert-messages">\n                <!-- Alerts will be shown here -->\n            </div>\n        </section>\n        <section id="detailed-data">\n            <h2>Detailed Meteorological Data</h2>\n            <div id="meteorological-data">\n                <!-- Detailed data will go here -->\n            </div>\n        </section>\n    </main>\n    <footer>\n        <p>&copy; 2026 Weather Dashboard</p>\n    </footer>\n    <script src="script.js"></script>\n</body>\n</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Dashboard</title>
+    <link rel="stylesheet" href="src/css/styles.css">
+</head>
+<body>
+    <header>
+        <h1>Weather Dashboard</h1>
+        <nav>
+            <input type="text" id="search" placeholder="Search for a city...">
+            <button id="search-btn">Search</button>
+            <label><input type="checkbox" id="units-toggle"> Metric (°C)</label>
+        </nav>
+    </header>
+    <main>
+        <section id="current-weather">
+            <h2>Current Weather</h2>
+            <div id="weather-display">
+                <!-- Weather data will be displayed here -->
+            </div>
+        </section>
+        <section id="forecast">
+            <h2>5-Day Forecast</h2>
+            <div id="forecast-cards">
+                <!-- Forecast cards will be generated here -->
+            </div>
+        </section>
+        <section id="alerts">
+            <h2>Weather Alerts</h2>
+            <div id="alert-messages">
+                <!-- Alerts will be shown here -->
+            </div>
+        </section>
+        <section id="detailed-data">
+            <h2>Detailed Meteorological Data</h2>
+            <div id="meteorological-data">
+                <!-- Detailed data will go here -->
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2026 Weather Dashboard</p>
+    </footer>
+    <script src="script.js" type="module"></script>
+</body>
+</html>

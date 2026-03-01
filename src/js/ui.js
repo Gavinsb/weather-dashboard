@@ -1,6 +1,5 @@
-// ui.js
+// ui.js — UI rendering helpers
 
-// Function to update UI elements
 function updateUIElement(selector, value) {
     const element = document.querySelector(selector);
     if (element) {
@@ -8,7 +7,6 @@ function updateUIElement(selector, value) {
     }
 }
 
-// Function to render weather cards
 function renderWeatherCard(weatherData) {
     const card = document.createElement('div');
     card.className = 'weather-card';
@@ -17,23 +15,19 @@ function renderWeatherCard(weatherData) {
         <p>Temperature: ${weatherData.temperature}°${weatherData.unit}</p>
         <p>Condition: ${weatherData.condition}</p>
     `;
-    document.querySelector('#weather-container').appendChild(card);
+    document.querySelector('#weather-display').appendChild(card);
 }
 
-// Function to handle theme changes
 function toggleTheme() {
-    const body = document.body;
-    body.classList.toggle('dark-theme');
+    document.body.classList.toggle('dark-theme');
 }
 
-// Function to display data based on temperature units
 function displayTemperature(temperature, unit) {
-    return unit === 'C' ? temperature + ' °C' : (temperature * 9/5 + 32).toFixed(2) + ' °F';
+    return unit === 'C' ? temperature + ' °C' : (temperature * 9 / 5 + 32).toFixed(2) + ' °F';
 }
 
-// Function to format timestamp
-function formatTimestamp(timestamp, format) {
-    const date = new Date(timestamp);
-    // Assuming format is 'YYYY-MM-DD HH:MM:SS'
-    return date.toISOString().slice(0, 19).replace('T', ' ');
+function formatTimestamp(timestamp) {
+    return new Date(timestamp).toISOString().slice(0, 19).replace('T', ' ');
 }
+
+export { updateUIElement, renderWeatherCard, toggleTheme, displayTemperature, formatTimestamp };

@@ -10,11 +10,17 @@ function updateUIElement(selector, value) {
 function renderWeatherCard(weatherData) {
     const card = document.createElement('div');
     card.className = 'weather-card';
-    card.innerHTML = `
-        <h3>${weatherData.city}</h3>
-        <p>Temperature: ${weatherData.temperature}°${weatherData.unit}</p>
-        <p>Condition: ${weatherData.condition}</p>
-    `;
+
+    const h3 = document.createElement('h3');
+    h3.textContent = weatherData.city;
+
+    const tempP = document.createElement('p');
+    tempP.textContent = `Temperature: ${weatherData.temperature}°${weatherData.unit}`;
+
+    const condP = document.createElement('p');
+    condP.textContent = `Condition: ${weatherData.condition}`;
+
+    card.append(h3, tempP, condP);
     document.querySelector('#weather-display').appendChild(card);
 }
 

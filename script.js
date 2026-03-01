@@ -1,4 +1,4 @@
-import { fetchCurrentWeather, fetchWeatherForecast, fetchWeatherByCoords } from './src/js/weather.js';
+import { fetchWeatherData, fetchWeatherByCoords, WMO_CODES } from './src/js/weather.js';
 
 const searchInput = document.querySelector('#search');
 const searchButton = document.querySelector('#search-btn');
@@ -10,52 +10,71 @@ function getUnits() {
     return unitsToggle.checked ? 'metric' : 'imperial';
 }
 
-function displayWeather(data) {
-    if (data.cod !== 200) {
-        weatherDisplay.innerHTML = `<p class="error">Error: ${data.message}</p>`;
-        return;
-    }
-    const { name, main, weather, wind } = data;
+// Safe DOM element factory — never uses innerHTML for untrusted content
+function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+}
+
+function wmoDescription(code) {
+    return WMO_CODES[code] ?? 'Unknown condition';
+}
+
+function displayWeather(data, cityName) {
+    weatherDisplay.innerHTML = '';
+    const { current } = data;
     const unit = unitsToggle.checked ? 'C' : 'F';
-    weatherDisplay.innerHTML = `
-        <h2>${name}</h2>
-        <p>Temperature: ${main.temp}°${unit}</p>
-        <p>Feels like: ${main.feels_like}°${unit}</p>
-        <p>Condition: ${weather[0].description}</p>
-        <p>Humidity: ${main.humidity}%</p>
-        <p>Wind Speed: ${wind.speed} m/s</p>
-    `;
+
+    weatherDisplay.append(
+        el('h2', null, cityName ?? 'Current Location'),
+        el('p', null, `Temperature: ${current.temperature_2m}°${unit}`),
+        el('p', null, `Feels like: ${current.apparent_temperature}°${unit}`),
+        el('p', null, `Condition: ${wmoDescription(current.weather_code)}`),
+        el('p', null, `Humidity: ${current.relative_humidity_2m}%`),
+        el('p', null, `Wind Speed: ${current.wind_speed_10m} m/s`),
+    );
 }
 
 function displayForecast(data) {
-    if (data.cod !== '200') return;
     forecastCards.innerHTML = '';
-    // Show one reading per day (every 8th entry ≈ 24 h intervals)
-    data.list.filter((_, i) => i % 8 === 0).forEach(item => {
-        const card = document.createElement('div');
-        card.className = 'weather-card';
-        const unit = unitsToggle.checked ? 'C' : 'F';
-        card.innerHTML = `
-            <h3>${new Date(item.dt * 1000).toLocaleDateString()}</h3>
-            <p>${item.main.temp}°${unit}</p>
-            <p>${item.weather[0].description}</p>
-        `;
+    const { daily } = data;
+    const unit = unitsToggle.checked ? 'C' : 'F';
+
+    daily.time.forEach((date, i) => {
+        const card = el('div', 'weather-card');
+        card.append(
+            el('h3', null, new Date(date).toLocaleDateString()),
+            el('p', null, `${daily.temperature_2m_max[i]}° / ${daily.temperature_2m_min[i]}°${unit}`),
+            el('p', null, wmoDescription(daily.weather_code[i])),
+        );
         forecastCards.appendChild(card);
     });
 }
 
+function showError(message) {
+    weatherDisplay.innerHTML = '';
+    weatherDisplay.appendChild(el('p', 'error', message));
+}
+
 async function search(location) {
-    if (!location.trim()) return;
+    const trimmed = location.trim();
+    if (!trimmed) return;
+    if (trimmed.length > 100) {
+        showError('Search query is too long.');
+        return;
+    }
     const units = getUnits();
     try {
-        const [current, forecast] = await Promise.all([
-            fetchCurrentWeather(location, units),
-            fetchWeatherForecast(location, units),
-        ]);
-        displayWeather(current);
-        displayForecast(forecast);
-    } catch {
-        weatherDisplay.innerHTML = `<p class="error">Failed to fetch weather data. Please try again.</p>`;
+        const data = await fetchWeatherData(trimmed, units);
+        displayWeather(data, data._cityName);
+        displayForecast(data);
+    } catch (err) {
+        const safe = err.message.startsWith('City not found')
+            ? err.message
+            : 'Failed to fetch weather data. Please try again.';
+        showError(safe);
     }
 }
 
@@ -76,10 +95,8 @@ if (navigator.geolocation) {
             const { latitude, longitude } = position.coords;
             try {
                 const data = await fetchWeatherByCoords(latitude, longitude, getUnits());
-                displayWeather(data);
-                searchInput.value = data.name;
-                const forecast = await fetchWeatherForecast(data.name, getUnits());
-                displayForecast(forecast);
+                displayWeather(data, null);
+                displayForecast(data);
             } catch {
                 // Silent fallback — user can search manually
             }

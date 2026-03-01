@@ -1,8 +1,22 @@
-// weather.js — OpenWeatherMap API integration
-// Replace 'YOUR_API_KEY_HERE' with your key from https://openweathermap.org/api
+// weather.js — Open-Meteo API integration (no API key required)
+// Docs: https://open-meteo.com/
 
-const API_KEY = 'YOUR_API_KEY_HERE';
-const BASE_URL = 'https://api.openweathermap.org/data/2.5';
+const GEO_BASE = 'https://geocoding-api.open-meteo.com/v1';
+const WEATHER_BASE = 'https://api.open-meteo.com/v1';
+
+// WMO Weather interpretation codes: https://open-meteo.com/en/docs#weathervariables
+const WMO_CODES = {
+    0: 'Clear sky',
+    1: 'Mainly clear', 2: 'Partly cloudy', 3: 'Overcast',
+    45: 'Fog', 48: 'Icy fog',
+    51: 'Light drizzle', 53: 'Drizzle', 55: 'Heavy drizzle',
+    61: 'Light rain', 63: 'Rain', 65: 'Heavy rain',
+    71: 'Light snow', 73: 'Snow', 75: 'Heavy snow',
+    77: 'Snow grains',
+    80: 'Rain showers', 81: 'Heavy rain showers', 82: 'Violent rain showers',
+    85: 'Snow showers', 86: 'Heavy snow showers',
+    95: 'Thunderstorm', 96: 'Thunderstorm with hail', 99: 'Thunderstorm with heavy hail',
+};
 
 async function _get(url) {
     const response = await fetch(url);
@@ -10,21 +24,30 @@ async function _get(url) {
     return response.json();
 }
 
-const fetchCurrentWeather = (city, units = 'metric') =>
-    _get(`${BASE_URL}/weather?q=${encodeURIComponent(city)}&units=${units}&appid=${API_KEY}`);
+async function geocodeCity(city) {
+    const data = await _get(
+        `${GEO_BASE}/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`
+    );
+    if (!data.results?.length) throw new Error(`City not found: "${city}"`);
+    return data.results[0]; // { name, latitude, longitude, country, ... }
+}
 
-const fetchWeatherForecast = (city, units = 'metric') =>
-    _get(`${BASE_URL}/forecast?q=${encodeURIComponent(city)}&units=${units}&appid=${API_KEY}`);
+async function fetchWeatherByCoords(lat, lon, units = 'metric') {
+    const tempUnit = units === 'metric' ? 'celsius' : 'fahrenheit';
+    const url = `${WEATHER_BASE}/forecast` +
+        `?latitude=${lat}&longitude=${lon}` +
+        `&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m` +
+        `&daily=weather_code,temperature_2m_max,temperature_2m_min` +
+        `&temperature_unit=${tempUnit}&wind_speed_unit=ms&forecast_days=5&timezone=auto`;
+    return _get(url);
+}
 
-const fetchWeatherByCoords = (lat, lon, units = 'metric') =>
-    _get(`${BASE_URL}/weather?lat=${lat}&lon=${lon}&units=${units}&appid=${API_KEY}`);
+async function fetchWeatherData(city, units = 'metric') {
+    const geo = await geocodeCity(city);
+    const data = await fetchWeatherByCoords(geo.latitude, geo.longitude, units);
+    data._cityName = geo.name;
+    data._country = geo.country;
+    return data;
+}
 
-const fetchWeatherAlerts = async (lat, lon) => {
-    const data = await _get(`${BASE_URL}/onecall?lat=${lat}&lon=${lon}&exclude=hourly,daily&appid=${API_KEY}`);
-    return data.alerts || [];
-};
-
-const fetchAirQuality = (lat, lon) =>
-    _get(`${BASE_URL}/air_pollution?lat=${lat}&lon=${lon}&appid=${API_KEY}`);
-
-export { fetchCurrentWeather, fetchWeatherForecast, fetchWeatherByCoords, fetchWeatherAlerts, fetchAirQuality };
+export { fetchWeatherData, fetchWeatherByCoords, WMO_CODES };

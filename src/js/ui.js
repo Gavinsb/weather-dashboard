@@ -1,5 +1,13 @@
 // ui.js — UI rendering helpers
 
+// Safe DOM element factory — never uses innerHTML for untrusted content
+function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+}
+
 function updateUIElement(selector, value) {
     const element = document.querySelector(selector);
     if (element) {
@@ -8,13 +16,12 @@ function updateUIElement(selector, value) {
 }
 
 function renderWeatherCard(weatherData) {
-    const card = document.createElement('div');
-    card.className = 'weather-card';
-    card.innerHTML = `
-        <h3>${weatherData.city}</h3>
-        <p>Temperature: ${weatherData.temperature}°${weatherData.unit}</p>
-        <p>Condition: ${weatherData.condition}</p>
-    `;
+    const card = el('div', 'weather-card');
+    card.append(
+        el('h3', null, weatherData.city),
+        el('p', null, `Temperature: ${weatherData.temperature}°${weatherData.unit}`),
+        el('p', null, `Condition: ${weatherData.condition}`),
+    );
     document.querySelector('#weather-display').appendChild(card);
 }
 
@@ -30,4 +37,4 @@ function formatTimestamp(timestamp) {
     return new Date(timestamp).toISOString().slice(0, 19).replace('T', ' ');
 }
 
-export { updateUIElement, renderWeatherCard, toggleTheme, displayTemperature, formatTimestamp };
+export { el, updateUIElement, renderWeatherCard, toggleTheme, displayTemperature, formatTimestamp };

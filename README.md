@@ -30,12 +30,8 @@ The Weather Dashboard is a web application that provides users with real-time we
 5. Open your browser and go to `http://localhost:3000` to view the dashboard.
 
 ## API Configuration
-To fetch weather data, you will need an API key from a weather service provider such as OpenWeatherMap.
-1. Sign up at [OpenWeatherMap](https://openweathermap.org/api) and obtain your API key.
-2. In the project, create a `.env` file in the root directory and add your API key:
-   ```plaintext
-   API_KEY=your_api_key_here
-   ```
+This project uses [Open-Meteo](https://open-meteo.com/), a free and open-source weather API.
+**No API key is required.** The app works out of the box with no account or sign-up needed.
 
 ## Usage Guide
 1. Enter the name of the city you want to check the weather for in the search bar.

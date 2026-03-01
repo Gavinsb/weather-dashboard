@@ -52,7 +52,12 @@ function saveToLocalStorage(key, value) {
  */
 function getFromLocalStorage(key) {
     const value = localStorage.getItem(key);
-    return value ? JSON.parse(value) : null;
+    if (!value) return null;
+    try {
+        return JSON.parse(value);
+    } catch {
+        return null;
+    }
 }
 
 export {

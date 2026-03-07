@@ -18,6 +18,17 @@ const WMO_CODES = {
     95: 'Thunderstorm', 96: 'Thunderstorm with hail', 99: 'Thunderstorm with heavy hail',
 };
 
+export class CityNotFoundError extends Error {
+    constructor(city) {
+        super(`City not found: "${city}"`);
+        this.name = 'CityNotFoundError';
+    }
+}
+
+export function wmoDescription(code) {
+    return WMO_CODES[code] ?? 'Unknown condition';
+}
+
 async function _get(url) {
     const response = await fetch(url);
     if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
@@ -28,11 +39,11 @@ async function geocodeCity(city) {
     const data = await _get(
         `${GEO_BASE}/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`
     );
-    if (!data.results?.length) throw new Error(`City not found: "${city}"`);
-    return data.results[0]; // { name, latitude, longitude, country, ... }
+    if (!data.results?.length) throw new CityNotFoundError(city);
+    return data.results[0]; // { name, latitude, longitude, ... }
 }
 
-async function fetchWeatherByCoords(lat, lon, units = 'metric') {
+export async function fetchWeatherByCoords(lat, lon, units = 'metric') {
     const tempUnit = units === 'metric' ? 'celsius' : 'fahrenheit';
     const url = `${WEATHER_BASE}/forecast` +
         `?latitude=${lat}&longitude=${lon}` +
@@ -42,10 +53,8 @@ async function fetchWeatherByCoords(lat, lon, units = 'metric') {
     return _get(url);
 }
 
-async function fetchWeatherData(city, units = 'metric') {
-    const geo = await geocodeCity(city);
-    const weather = await fetchWeatherByCoords(geo.latitude, geo.longitude, units);
-    return { weather, cityName: geo.name, country: geo.country };
+export async function fetchWeatherData(city, units = 'metric') {
+    const { name, latitude, longitude } = await geocodeCity(city);
+    const weather = await fetchWeatherByCoords(latitude, longitude, units);
+    return { weather, cityName: name, latitude, longitude };
 }
-
-export { fetchWeatherData, fetchWeatherByCoords, WMO_CODES };

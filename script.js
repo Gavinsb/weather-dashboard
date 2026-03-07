@@ -1,11 +1,15 @@
-import { fetchWeatherData, fetchWeatherByCoords, WMO_CODES } from './src/js/weather.js';
+import { fetchWeatherData, fetchWeatherByCoords, wmoDescription, CityNotFoundError } from './src/js/weather.js';
 import { el } from './src/js/ui.js';
+import { getUserLocation } from './src/js/geolocation.js';
 
 const searchInput = document.querySelector('#search');
 const searchButton = document.querySelector('#search-btn');
 const weatherDisplay = document.querySelector('#weather-display');
 const forecastCards = document.querySelector('#forecast-cards');
 const unitsToggle = document.querySelector('#units-toggle');
+
+// Last successfully resolved coordinates — reused on units change to skip re-geocoding.
+let lastCoords = null; // { lat, lon, cityName }
 
 function getUnits() {
     return unitsToggle.checked ? 'metric' : 'imperial';
@@ -15,16 +19,11 @@ function getUnitSymbol() {
     return unitsToggle.checked ? 'C' : 'F';
 }
 
-function wmoDescription(code) {
-    return WMO_CODES[code] ?? 'Unknown condition';
-}
-
 function displayWeather(data, cityName) {
-    weatherDisplay.innerHTML = '';
     const { current } = data;
     const unit = getUnitSymbol();
 
-    weatherDisplay.append(
+    weatherDisplay.replaceChildren(
         el('h2', null, cityName ?? 'Current Location'),
         el('p', null, `Temperature: ${current.temperature_2m}°${unit}`),
         el('p', null, `Feels like: ${current.apparent_temperature}°${unit}`),
@@ -35,10 +34,10 @@ function displayWeather(data, cityName) {
 }
 
 function displayForecast(data) {
-    forecastCards.innerHTML = '';
     const { daily } = data;
     const unit = getUnitSymbol();
 
+    const fragment = document.createDocumentFragment();
     daily.time.forEach((date, i) => {
         const card = el('div', 'weather-card');
         card.append(
@@ -46,13 +45,14 @@ function displayForecast(data) {
             el('p', null, `${daily.temperature_2m_max[i]}° / ${daily.temperature_2m_min[i]}°${unit}`),
             el('p', null, wmoDescription(daily.weather_code[i])),
         );
-        forecastCards.appendChild(card);
+        fragment.appendChild(card);
     });
+
+    forecastCards.replaceChildren(fragment);
 }
 
 function showError(message) {
-    weatherDisplay.innerHTML = '';
-    weatherDisplay.appendChild(el('p', 'error', message));
+    weatherDisplay.replaceChildren(el('p', 'error', message));
 }
 
 async function search(location) {
@@ -64,14 +64,23 @@ async function search(location) {
     }
     const units = getUnits();
     try {
-        const { weather, cityName } = await fetchWeatherData(trimmed, units);
+        const { weather, cityName, latitude, longitude } = await fetchWeatherData(trimmed, units);
+        lastCoords = { lat: latitude, lon: longitude, cityName };
         displayWeather(weather, cityName);
         displayForecast(weather);
     } catch (err) {
-        const safe = err.message.startsWith('City not found')
-            ? err.message
-            : 'Failed to fetch weather data. Please try again.';
-        showError(safe);
+        showError(err instanceof CityNotFoundError ? err.message : 'Failed to fetch weather data. Please try again.');
+    }
+}
+
+async function refreshWithUnits() {
+    const { lat, lon, cityName } = lastCoords;
+    try {
+        const weather = await fetchWeatherByCoords(lat, lon, getUnits());
+        displayWeather(weather, cityName);
+        displayForecast(weather);
+    } catch {
+        showError('Failed to fetch weather data. Please try again.');
     }
 }
 
@@ -82,22 +91,20 @@ searchInput.addEventListener('keydown', e => {
 });
 
 unitsToggle.addEventListener('change', () => {
-    const location = searchInput.value;
-    if (location) search(location);
+    if (lastCoords) {
+        refreshWithUnits();
+    } else {
+        const location = searchInput.value;
+        if (location) search(location);
+    }
 });
 
-if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-        async position => {
-            const { latitude, longitude } = position.coords;
-            try {
-                const data = await fetchWeatherByCoords(latitude, longitude, getUnits());
-                displayWeather(data, null);
-                displayForecast(data);
-            } catch {
-                // Silent fallback — user can search manually
-            }
-        },
-        () => {} // User denied geolocation or it is unavailable
-    );
-}
+getUserLocation(async (lat, lon) => {
+    try {
+        const data = await fetchWeatherByCoords(lat, lon, getUnits());
+        displayWeather(data, null);
+        displayForecast(data);
+    } catch {
+        // Silent fallback — user can search manually
+    }
+});

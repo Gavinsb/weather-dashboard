@@ -1,4 +1,5 @@
 // ui.js — UI rendering helpers
+import { celsiusToFahrenheit, formatTime } from './utils.js';
 
 // Safe DOM element factory — never uses innerHTML for untrusted content
 function el(tag, className, text) {
@@ -30,11 +31,11 @@ function toggleTheme() {
 }
 
 function displayTemperature(temperature, unit) {
-    return unit === 'C' ? temperature + ' °C' : (temperature * 9 / 5 + 32).toFixed(2) + ' °F';
+    return unit === 'C' ? temperature + ' °C' : celsiusToFahrenheit(temperature).toFixed(2) + ' °F';
 }
 
 function formatTimestamp(timestamp) {
-    return new Date(timestamp).toISOString().slice(0, 19).replace('T', ' ');
+    return formatTime(new Date(timestamp));
 }
 
 export { el, updateUIElement, renderWeatherCard, toggleTheme, displayTemperature, formatTimestamp };
